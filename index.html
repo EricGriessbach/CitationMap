@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graph Visualization</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    
+    .header {
+      padding: 1rem;
+      background-color: #f0f0f0;
+      text-align: center;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+    }
+    
+    .controls {
+      padding: 1rem;
+      width: 250px;
+      background-color: #f8f8f8;
+      border-right: 1px solid #ddd;
+    }
+    
+    .control-group {
+      margin-bottom: 1rem;
+    }
+    
+    .control-group h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    button {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    .slider-container {
+      margin-top: 1rem;
+    }
+    
+    .slider-container label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    
+    #sigma-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Graph Visualization</h1>
+    <p>Interactive network visualization using SigmaJS</p>
+  </div>
+  
+  <div class="container">
+    <div class="controls">
+      <div class="control-group">
+        <h3>Zoom Controls</h3>
+        <div class="btn-group">
+          <button id="zoom-in">Zoom In</button>
+          <button id="zoom-out">Zoom Out</button>
+          <button id="zoom-reset">Reset</button>
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <h3>Display Options</h3>
+        <div class="slider-container">
+          <label for="labels-threshold">Labels Threshold</label>
+          <input type="range" id="labels-threshold" min="0" max="15" step="0.5" value="7">
+        </div>
+      </div>
+    </div>
+    
+    <div id="sigma-container"></div>
+  </div>
+
+  <!-- Use ES module imports directly in the browser -->
+  <script type="module">
+    // Import libraries from ES modules CDN (skypack, unpkg or esm.sh)
+    import Graph from 'https://cdn.skypack.dev/graphology';
+    import { parse } from 'https://cdn.skypack.dev/graphology-gexf/browser';
+    import Sigma from 'https://cdn.skypack.dev/sigma';
+
+    // This follows the example structure closely, but loads a specific file
+    const init = () => {
+      let renderer = null;
+
+      // Add a loading indicator
+      const loadingIndicator = document.createElement('div');
+      loadingIndicator.textContent = 'Loading graph...';
+      loadingIndicator.style.margin = '10px';
+      document.querySelector('.header').appendChild(loadingIndicator);
+
+      // Load the specific GEXF file directly
+      fetch('./MotorLearning.gexf')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(gexf => {
+          // Hide loading indicator
+          loadingIndicator.textContent = 'Graph loaded successfully!';
+          loadingIndicator.style.color = 'green';
+          
+          // Parse GEXF string:
+          const graph = parse(Graph, gexf);
+
+          // Retrieve some useful DOM elements:
+          const container = document.getElementById("sigma-container");
+          const zoomInBtn = document.getElementById("zoom-in");
+          const zoomOutBtn = document.getElementById("zoom-out");
+          const zoomResetBtn = document.getElementById("zoom-reset");
+          const labelsThresholdRange = document.getElementById("labels-threshold");
+
+          // Clean up previous renderer if it exists
+          if (renderer) {
+            renderer.kill();
+            renderer = null;
+          }
+          
+          // Define state for hover interactions
+          const state = {
+            hoveredNode: undefined,
+            hoveredNeighbors: undefined
+          };
+
+          // Function to handle hover state
+          function setHoveredNode(node) {
+            if (node) {
+              state.hoveredNode = node;
+              state.hoveredNeighbors = new Set(graph.neighbors(node));
+            } else {
+              state.hoveredNode = undefined;
+              state.hoveredNeighbors = undefined;
+            }
+
+            // Refresh rendering without reindexing
+            renderer.refresh({
+              skipIndexation: true,
+            });
+          }
+          
+          // Instantiate sigma with custom settings for labels
+          renderer = new Sigma(graph, container, {
+            minCameraRatio: 0.08,
+            maxCameraRatio: 3,
+            renderLabels: false,
+            labelRenderedSizeThreshold: 7,
+            labelSize: 12,
+            defaultNodeColor: "#6c9",
+            defaultEdgeColor: "#999",
+            
+            // Node reducer with hover functionality
+            nodeReducer: (node, data) => {
+              const res = {...data};
+              res.size = data.size / 3; // Reduce node size by half
+              
+              // Apply hover effects
+              if (state.hoveredNeighbors && !state.hoveredNeighbors.has(node) && state.hoveredNode !== node) {
+                res.label = "";
+                res.color = "#f6f6f6";
+                res.opacity = 0.3;
+              }
+              
+              // Highlight hovered node
+              if (state.hoveredNode === node) {
+                res.highlighted = true;
+                res.color = "#FFA500"; // Orange highlight for hovered node
+                res.forceLabel = true;
+              }
+              
+              return res;
+            },
+            
+            // Edge reducer with hover functionality
+            edgeReducer: (edge, data) => {
+              const res = {...data};
+              res.size = 0.001;        // Base edge width
+              res.color = "#808080"; // Edge color
+              
+              // Hide edges not connected to hovered node
+              if (
+                state.hoveredNode &&
+                !graph.extremities(edge).every((n) => 
+                  n === state.hoveredNode || 
+                  (state.hoveredNeighbors && state.hoveredNeighbors.has(n))
+                )
+              ) {
+                res.hidden = true;
+              }
+              
+              return res;
+            },
+            
+            // Hover renderer for additional visual cues
+            hoverRenderer: (context, data, settings) => {
+              // This draws the hovered node differently
+              const size = settings.nodeReducer?.(data.node, data.data)?.size || data.data.size;
+              context.beginPath();
+              context.arc(data.x, data.y, size, 0, Math.PI * 2);
+              context.fillStyle = "#FFA500"; // Orange highlight for hovered node
+              context.fill();
+              
+              // Draw the label for the hovered node
+              if (data.label) {
+                context.font = "bold 12px Arial";
+                context.fillStyle = "#000";
+                context.textAlign = "center";
+                context.fillText(data.label, data.x, data.y + size + 12);
+              }
+            }
+          });
+          
+          // Bind graph interactions for hover
+          renderer.on("enterNode", ({ node }) => {
+            setHoveredNode(node);
+          });
+          
+          renderer.on("leaveNode", () => {
+            setHoveredNode(undefined);
+          });
+          
+          const camera = renderer.getCamera();
+
+          // Bind zoom manipulation buttons
+          zoomInBtn.addEventListener("click", () => {
+            camera.animatedZoom({ duration: 600 });
+          });
+          zoomOutBtn.addEventListener("click", () => {
+            camera.animatedUnzoom({ duration: 600 });
+          });
+          zoomResetBtn.addEventListener("click", () => {
+            camera.animatedReset({ duration: 600 });
+          });
+
+          // Bind labels threshold to range input
+          labelsThresholdRange.addEventListener("input", () => {
+            renderer?.setSetting("labelRenderedSizeThreshold", +labelsThresholdRange.value);
+          });
+
+          // Set proper range initial value:
+          labelsThresholdRange.value = renderer.getSetting("labelRenderedSizeThreshold") + "";
+        })
+        .catch(error => {
+          loadingIndicator.textContent = `Error loading graph: ${error.message}`;
+          loadingIndicator.style.color = 'red';
+          console.error('Error loading the GEXF file:', error);
+        });
+    };
+
+    // Initialize the app
+    init();
+  </script>
+</body>
+</html>
