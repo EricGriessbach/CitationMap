@@ -1,0 +1,10 @@
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor / temp
+*.tmp
+*~
+
+# Not part of the published site (analysis/slide figures)
+presentation_assets/
