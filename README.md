@@ -66,6 +66,4 @@ citation edges, CSR uint32), and — for the Gemini / ForceAtlas bundles —
 
 ## Credits
 
-The underlying motor-learning citation network is derived from the
-[citation-network-ncm](https://alfredohernandezinostroza.github.io/citation-network-ncm/)
-project. Map and analysis by Eric Griessbach.
+Map and analysis by Mariana Duarte, Alfredo Hernandez and Eric Griessbach.
