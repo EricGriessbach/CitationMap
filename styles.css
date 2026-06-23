@@ -684,3 +684,125 @@ details.about p {
   color: var(--accent);
 }
 
+/* ── Guided tour ──────────────────────────────────────────────────────── */
+/* Floating launch button (always available). */
+#start-tour {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+#start-tour:hover { border-color: var(--accent); color: var(--accent); }
+#start-tour .tour-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0e1116;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+#tour-root { position: fixed; inset: 0; z-index: 5000; }
+
+/* Blocker swallows clicks on the page while the tour is open. */
+#tour-blocker { position: absolute; inset: 0; }
+
+/* Spotlight: a transparent box whose huge box-shadow dims everything else. */
+#tour-spotlight {
+  position: fixed;
+  border-radius: 10px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(8, 10, 14, 0.72);
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  transition: left 180ms ease, top 180ms ease, width 180ms ease, height 180ms ease;
+}
+#tour-spotlight[hidden] { display: none; }
+
+#tour-popover {
+  position: fixed;
+  width: 308px;
+  max-width: calc(100vw - 24px);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: var(--text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  transition: left 180ms ease, top 180ms ease;
+}
+#tour-popover.tour-centered {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+#tour-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+#tour-close:hover { color: var(--text); }
+#tour-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; padding-right: 20px; }
+#tour-body { font-size: 12.5px; line-height: 1.45; color: var(--text); }
+#tour-body em { color: var(--text-dim); font-style: normal; }
+#tour-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+#tour-footer .tour-spacer { flex: 1; }
+#tour-progress { color: var(--text-dim); font-size: 11px; }
+#tour-footer button {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+#tour-footer .tour-ghost {
+  background: #161a22;
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+}
+#tour-footer .tour-ghost:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+#tour-footer .tour-ghost:disabled { opacity: 0.4; cursor: default; }
+#tour-footer .tour-primary {
+  background: var(--accent);
+  color: #0e1116;
+  border: 1px solid var(--accent);
+  font-weight: 700;
+}
+#tour-footer .tour-primary:hover { filter: brightness(1.05); }
+
